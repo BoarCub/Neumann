@@ -1,8 +1,11 @@
 from reportlab.pdfgen import canvas #This allows us to generate PDF Documents
 from reportlab.platypus import Paragraph #Allows us to create multiline paragraphs
 from reportlab.lib.styles import ParagraphStyle #Allows us to style paragraphs
+import os
 
 def makePDF(worksheetTitle, subtitle, questions, fileName):
+
+    os.chdir("../Exported Worksheets")
 
     pdf = canvas.Canvas(fileName)
     pdf.setTitle(worksheetTitle)
@@ -24,8 +27,8 @@ def makePDF(worksheetTitle, subtitle, questions, fileName):
     y_value = 680
     for x in range(len(questions)):
         text = pdf.beginText(40, y_value)
-        text.textLines(questions[x])
-        pdf.drawText(str(x) + ")" + "  " + text)
+        text.textLines(str(x+1) + ")" + "  " + questions[x])
+        pdf.drawText(text)
 
         y_value -= 100
         if y_value <= 100:

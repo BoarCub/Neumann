@@ -1,0 +1,209 @@
+# InterfaceManager acts as a container for all of the Screens in the app
+InterfaceManager:
+    StartScreen:
+    TaskCreatorScreen:
+        id: task_creator_screen
+    DebugScreen:
+    SaveFileScreen:
+    PreviousFileScreen:
+        id: previous_file_screen
+        
+# The first menu that the user sees
+<StartScreen>:
+    name: "Start Screen"
+    
+    # Title Text
+    Label:
+        text: "Neumann"
+        pos_hint: {'center_x': .5, 'center_y': 0.8}
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        font_size: '60sp'
+        font_name: 'Corbel'
+        
+    # This BoxLayout houses all of the buttons in the main menu
+    BoxLayout:
+        size_hint: .4, .2
+        pos_hint: {'center_x': .5}
+        orientation: 'vertical'
+        Button: #Create New Task Button
+            text: "Create New Worksheet"
+            on_release: app.root.current = "Task Creator Screen"
+        Button: #Show Previous File Button
+            text: "Load Worksheet"
+            on_release: app.root.current = "Previous File Screen"
+            on_release: app.root.ids.previous_file_screen.refresh()
+
+# This screen allows a user to create a new task
+<TaskCreatorScreen>:
+    name: "Task Creator Screen"
+    questions_layout: questions_layout
+    delete_button: delete_button
+    
+    # Static Layout Showing the Titles of Each Column
+    FloatLayout:
+        Label:
+            size_hint: 0.8, 0.1
+            pos_hint: {'center_x': 0.08, 'top': 1}
+            text: "[u]Question #:[/u]"
+            markup: True
+            font_size: '20sp'
+        Label:
+            size_hint: 0.8, 0.1
+            pos_hint: {'center_x': 0.55, 'top': 1}
+            text: "[u]Text:[/u]"
+            markup: True
+            font_size: '20sp'
+     
+    # This is code snippet produces a scrollable GridLayout
+    # The GridLayout at the bottom of the parent/child relationship acts as a container to which rows are procedurally added
+    # Each row represents an question, containing widgets with the properties of the question
+    BoxLayout:
+        size_hint: 1, .7
+        pos_hint: {'center_x': .5, 'center_y': .55}
+        ScrollView:
+            GridLayout:
+                id: questions_layout
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height 
+                row_default_height: 40
+                cols: 1
+                spacing: 10
+            
+    # This BoxLayout houses the buttons of the screen
+    BoxLayout:
+        size_hint: .5, .2
+        pos_hint: {'center_x': .5}
+        orientation: 'vertical'
+        Button: # Add Question Button: Creates an empty question, adds a corresponding row to the Scrollable GridLayout, and adds
+            # an element to the running dictionary in TaskManager
+            text: "Add Question"
+            on_release: root.addEmptyQuestion()
+        Button: # Delete Question Button: Toggles delete mode, allowing the user to delete any of question in the Scrollable GridLayout
+            id: delete_button
+            text: "Delete Question"
+            on_release: root.toggleDelete()
+        Button: # Opens a popup allowing us to set some properties of the worksheet such as title and how many questions to use
+            text: "Set Properties"
+            on_release: root.openPropertiesEditor()
+        Button: # Reset Task Button: Deletes all of the questions/rows in the Scrollable GridLayout and running dictionary
+            # Essentially creates a blank slate by removing anything already entered into the TaskCreator
+            text: "Reset Worksheet"
+            on_release: root.resetTask()
+        Button: # Save Task Button: Checks if the questions in the task are applicable or completed
+            # If they are, the task is ready to save
+            # The user is taken to the Save File Screen where they are able to save the current task using a file explorer system
+            text: "Save Worksheet"
+            on_release: app.root.current = root.saveFileScreen("Save File Screen", "Task Creator Screen")
+        Button: # Checks to see if the task is applicable and whether the program is able to make a connection to the pump
+            # If all is well, an execute task popup is opened and the appropriate commands are sent to the pump
+            text: "Export Worksheet"
+            on_release: root.executeTask()
+        Button: # Goes Back to the Start Screen
+            text: "Back"
+            on_release: app.root.current = "Start Screen"
+            
+# This screen offers advanced functionality
+<DebugScreen>:
+    name: "Debug Screen"
+    rawCommandConsole: rawCommandConsole
+    rawCommandText: rawCommandText
+        
+    BoxLayout: # Houses all of the widgets involved in excecuting Raw Commands
+        size_hint: .5, .25
+        pos_hint: {'center_y': .8, 'center_x': .5}
+        orientation: 'vertical'
+        Label:
+            text: "Enter Raw Commands" 
+        TextInput:
+            id: rawCommandText
+            hint_text: "e.g. A1000R"
+            multiline: False
+        Button:
+            text: "Send to Pump"
+            on_release: root.executeRawCommands()
+        Label:
+            id: rawCommandConsole
+            text: "Response:"
+        
+    BoxLayout:
+        size_hint: .3, .0625
+        pos_hint: {'center_x': .5}
+        orientation: 'vertical'
+        Button: #Goes Back to StartScreen
+            text: "Back"
+            on_release: app.root.current = "Start Screen"
+
+# Houses the screen allowing the user to save the current task
+<SaveFileScreen>:
+    name: "Save File Screen"
+    text_input: text_input
+    filechooser: filechooser
+    
+    # This BoxLayout houses all of the widgets
+    BoxLayout:
+        size: root.size
+        pos: root.pos
+        orientation: "vertical"
+        
+        # This widget acts a File Explorer that the user can use to select a location to save the file
+        FileChooserListView:
+            path: root.getPath()
+            id: filechooser
+
+        # Text Input allowing the user to in the name to save the file as
+        TextInput:
+            id: text_input
+            hint_text: "File Name"
+            size_hint_y: None
+            height: 30
+            multiline: False
+
+        # This BoxLayout houses two buttons
+        BoxLayout:
+            size_hint_y: None
+            height: 30
+            Button: # Back Button: returns the user back to the Task Creator Screen
+                text: "Back"
+                on_release: app.root.current = "Task Creator Screen"
+            Button: # Save Button: writes the current task to a new file as specified
+                text: "Save"
+                on_release: root.save(filechooser.path, text_input.text)
+    
+# Screen allowing the user to open and execute tasks from file
+<PreviousFileScreen>:
+    name: "Previous File Screen"
+    filechooser: filechooser
+    
+    #Title Text
+    Label:
+        text: "Load File"
+        pos_hint: {'center_x': .5, 'center_y': 0.9}
+        text_size: self.size
+        halign: 'center'
+        valign: 'middle'
+        font_size: '40sp'        
+    
+    BoxLayout:
+        pos_hint: {'center_x': .5, 'top': .85}
+        orientation: 'vertical'
+        # This widget acts as a file explorer, along the user to browse for a file to open
+        FileChooserIconView:
+            id: filechooser
+            path: root.getPath()
+            on_selection: root.selectedFile = root.selectFile(*args) # args contains the file object path ([0]) and the file path in a list ([1][0])
+    
+    # A BoxLayout containing navigational buttons
+    BoxLayout:
+        size_hint: .5, None
+        height: 100
+        pos_hint: {'center_x': .5}
+        orientation: 'vertical'
+        Button: # Choose File Button: Opens the file that the user chooses in the Task Creator Screen
+            text: "Choose File"
+            on_release: root.updateDisplay(app.root.ids.task_creator_screen)  # Updates the table of Questions in File/Task
+        Button: #Cancel Button, Returns to Main Menu
+            text: "Cancel"
+            on_release: app.root.current = "Start Screen"
